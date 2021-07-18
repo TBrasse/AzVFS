@@ -2,10 +2,7 @@ Class AzResources : System.Management.Automation.IValidateSetValuesGenerator {
     [String[]] GetValidValues() {
         $context = Get-AzContext
         $validValues = @("..", "ls", "pull")
-        if (-not $context) {
-            throw "no az context"
-        }
-        elseif (-not $Global:azSubscription) {
+        if (-not $Global:azSubscription) {
             return [string[]] $validValues + (Get-FileCash -CashName "Subscriptions").Name
         }
         elseif (-not $Global:azResourceGroup) {
@@ -42,24 +39,26 @@ function Set-AzLocation {
     $context = Get-AzContext
     if ($null -ne $context){
         $Global:azSubscription = $context.Subscription.Name
-        $cash = Get-AzSubscription | Select-Hashtable -Property Name,TenantId
-        $cash | Set-FileCash -CashName "Subscriptions" -Headers Name,TenantId
+        $subscriptons = Get-AzSubscription | Select-Hashtable -Property Name,TenantId
+        Set-FileCash -CashName "Subscriptions" -CashValue $subscriptons
+        $tenants = get-aztenant | Select-Object -Property Id,Name
+        Set-FileCash -CashName "Tenants" -CashValue $tenants
     }
     if (-not $Command){
         Write-Path
     }elseif ($Command -eq "pull"){
         Write-Path
-        if ($Global:azResourceName) {
-            $cash = Get-AzResource -ResourceGroupName $Global:azResourceGroup -ResourceName $Global:azResourceName | Select-Hashtable -Property Name,ResourceType,Location,Tags
-            $cash | Set-FileCash -CashName "$Global:azResourceName-$($Global:azResourceGroup)" -Headers Name,ResourceType,Location,Tags
-        }
-        elseif ($Global:azResourceGroup) {
-            $cash = (Get-AzResource -ResourceGroupName $Global:azresourcegroup) | Select-Hashtable -Property Name,ResourceType,Location,Tags
-            $cash | Set-FileCash -CashName "Resources-$($Global:azResourceGroup)" -Headers Name,ResourceType,Location,Tags
-        }
+        # if ($Global:azResourceName) {
+        #     $cash = Get-AzResource -ResourceGroupName $Global:azResourceGroup -ResourceName $Global:azResourceName | Select-Hashtable -Property Name,ResourceType,Location,Tags
+        #     $cash | Set-FileCash -CashName "$Global:azResourceName-$($Global:azResourceGroup)"
+        # }
+        # elseif ($Global:azResourceGroup) {
+        #     $cash = (Get-AzResource -ResourceGroupName $Global:azresourcegroup) | Select-Hashtable -Property Name,ResourceType,Location,Tags
+        #     $cash | Set-FileCash -CashName "Resources-$($Global:azResourceGroup)"
+        # }
         elseif ($Global:azSubscription) {
             $cash = Get-AzResourceGroup | Select-Hashtable -Property ResourceGroupName,Location,Tags
-            $cash | Set-FileCash -CashName "ResourceGroups-$($Global:azSubscription)" -Headers ResourceGroupName,Location,Tags
+            $cash | Set-FileCash -CashName "ResourceGroups-$($Global:azSubscription)"
         }
     }elseif ($Command -eq "..") {
         if ($Global:azResourceName) {
@@ -85,7 +84,13 @@ function Set-AzLocation {
             Get-FileCash -CashName "ResourceGroups-$($Global:azSubscription)"
         }
         else {
-            Get-FileCash -CashName "Subscriptions"
+            $tenants = Get-FileCash -CashName "Tenants"
+            $subscriptons = Get-FileCash -CashName "Subscriptions"
+            $subscriptons | ForEach-Object {
+                $subs = $_
+                $subs.TenantName = ($tenants | Where-Object {$_.Id -eq $subs.TenantId}).Name
+            }
+            $subscriptons | Select-Object -Property Name,TenantName
         }
     } else {
         if (-not $Global:azSubscription) {
