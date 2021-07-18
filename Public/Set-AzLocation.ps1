@@ -21,9 +21,7 @@ Class AzResources : System.Management.Automation.IValidateSetValuesGenerator {
 }
 
 function Write-Path {
-    if (get-azcontext) {
-        $path = "az:\"
-    }
+    $path = "az:\"
     if ($Global:azSubscription) {
         $path += "$Global:azSubscription\"
     }
@@ -41,6 +39,12 @@ function Set-AzLocation {
         [ValidateSet([AzResources])]
         [string] $Command
     )
+    $context = Get-AzContext
+    if ($null -ne $context){
+        $Global:azSubscription = $context.Subscription.Name
+        $cash = Get-AzSubscription | Select-Hashtable -Property Name,TenantId
+        $cash | Set-FileCash -CashName "Subscriptions" -Headers Name,TenantId
+    }
     if (-not $Command){
         Write-Path
     }elseif ($Command -eq "pull"){
@@ -57,10 +61,6 @@ function Set-AzLocation {
             $cash = Get-AzResourceGroup | Select-Hashtable -Property ResourceGroupName,Location,Tags
             $cash | Set-FileCash -CashName "ResourceGroups-$($Global:azSubscription)" -Headers ResourceGroupName,Location,Tags
         }
-        else {
-            $cash = Get-AzSubscription | Select-Hashtable -Property Name,TenantId
-            $cash | Set-FileCash -CashName "Subscriptions" -Headers Name,TenantId
-        }
     }elseif ($Command -eq "..") {
         if ($Global:azResourceName) {
             $Global:azResourceName = $null
@@ -70,6 +70,7 @@ function Set-AzLocation {
         }
         elseif ($Global:azSubscription) {
             $Global:azSubscription = $null
+            $null = Disconnect-AzAccount
         }
         Write-Path
     } elseif ($Command -eq "ls") {
