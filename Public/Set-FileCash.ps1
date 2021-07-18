@@ -1,33 +1,12 @@
 function Set-FileCash {
     param(
         [string] $CashName,
-        [Parameter(ValueFromPipeline)]
-        [hashtable] $CashValue,
-        [string[]] $Headers
+        [object] $CashValue
     )
-
-    begin{
-        $path = "$PSScriptRoot\$CashName-Cash.json"
-        if (-not(Test-Path -Path $path)) {
-            $null = New-Item -Path $path
-        }
-
-        $cashContent = Get-Content -Path $path | ConvertFrom-Json -AsHashtable
-        if (-not $cashContent) {
-            $cashContent = [System.Collections.ArrayList]::new()
-        }
-
-        $resultObject = [PSCustomObject]@{
-            Headers = $Headers
-            Cash = $cashContent
-        }
+    $path = "$PSScriptRoot\$CashName-Cash.json"
+    if (-not(Test-Path -Path $path)) {
+        $null = New-Item -Path $path
     }
-
-    process{
-        $null = $cashContent.Add($CashValue)
-    }
-    
-    end{
-        $null = Set-Content -Path $path -Value ($resultObject | ConvertTo-Json -Depth 10)
-    }
+    $jsonContent = $CashValue | ConvertTo-Json -Depth 10
+    Set-Content -Path $path -Value $jsonContent
 }
