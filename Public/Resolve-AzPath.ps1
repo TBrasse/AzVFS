@@ -7,7 +7,7 @@ function Resolve-AzPath {
         Get-FunctionMap -Name $Matches.Type
     }
     else {
-        Write-Error "Not supported Path: $Path"
+        Write-Error "Invalid Path: $Path"
         {}
     }
 
@@ -15,8 +15,8 @@ function Resolve-AzPath {
         $functionMap.Invoke($Path)
     }
     else {
-        Write-Error "Not Supported Function Path $Path"
+        Write-Error "Not Supported Path $Path"
     }
 
 }
-Set-Alias -Name "azvfs" -Value "Resolve-AzPath" -Option AllScope
+Set-Alias -Name "az:" -Value "Resolve-AzPath"

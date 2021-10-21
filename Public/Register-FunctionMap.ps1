@@ -3,5 +3,5 @@ function Register-FunctionMap{
         [string] $Type,
         [scriptblock] $FunctionMap
     )
-    $Global:FunctionMap["Aspera"] = $FunctionMap
+    $script:FunctionMap[$Type] = $FunctionMap
 }

@@ -1,3 +1,5 @@
+$script:FunctionMap = @{}
+
 $public = Get-ChildItem  -Path "$PSScriptRoot\Public" -Filter "*.ps1"
 
 $public | Import-Module
